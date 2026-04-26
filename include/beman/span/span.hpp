@@ -19,6 +19,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <ranges>
@@ -145,6 +146,25 @@ class span {
         : data_(std::ranges::data(r)), size_(std::ranges::size(r)) {
         if constexpr (Extent != dynamic_extent) {
             assert(std::ranges::size(r) == Extent);
+        }
+    }
+
+    // initializer_list constructor (P4190R0).
+    // The same_as match (not is_convertible) is what stops span<const bool>
+    // from silently grabbing this overload for a (bool*, size_t) argument
+    // pair - the bug that got the C++26 version (P2447R6) reverted by P4144R1.
+    // T_ defaults to ElementType so is_const_v stays dependent on a function
+    // template parameter; otherwise it would hard-error in span<int>.
+    template <class InitListValueType,
+              class T_ = ElementType,
+              std::enable_if_t<std::is_const_v<T_>, int> = 0,
+              std::enable_if_t<std::is_same_v<InitListValueType, std::remove_cv_t<T_>>,
+                               int> = 0>
+    constexpr explicit(Extent != dynamic_extent)
+        span(std::initializer_list<InitListValueType> il)
+        : data_(il.begin()), size_(il.size()) {
+        if constexpr (Extent != dynamic_extent) {
+            assert(il.size() == Extent);
         }
     }
 

@@ -7,7 +7,10 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <initializer_list>
 #include <numeric>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace bsp = beman::span;
@@ -168,6 +171,75 @@ TEST(SpanConstruction, dynamic_from_static) {
     bsp::span<int, 4> fixed(arr);
     bsp::span<int> dynamic(fixed);
     EXPECT_EQ(dynamic.size(), 4u);
+}
+
+TEST(SpanInitList, dynamic_from_braced_list) {
+    auto verify = [](bsp::span<const int> s) {
+        EXPECT_EQ(s.size(), 3u);
+        EXPECT_EQ(s[0], 1);
+        EXPECT_EQ(s[1], 2);
+        EXPECT_EQ(s[2], 3);
+    };
+    verify({1, 2, 3});
+}
+
+TEST(SpanInitList, fixed_extent_from_braced_list) {
+    auto verify = [](bsp::span<const int, 3> s) {
+        EXPECT_EQ(s.size(), 3u);
+        EXPECT_EQ(s[0], 1);
+        EXPECT_EQ(s[2], 3);
+    };
+    verify(bsp::span<const int, 3>{1, 2, 3});
+}
+
+TEST(SpanInitList, const_bool_from_braced_list) {
+    auto verify = [](bsp::span<const bool> s) {
+        EXPECT_EQ(s.size(), 3u);
+        EXPECT_TRUE(s[0]);
+        EXPECT_FALSE(s[1]);
+        EXPECT_TRUE(s[2]);
+    };
+    verify({true, false, true});
+}
+
+TEST(SpanInitList, named_initializer_list_keeps_array_alive) {
+    std::initializer_list<int> il = {10, 20, 30};
+    bsp::span<const int> s(il);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s[0], 10);
+    EXPECT_EQ(s[2], 30);
+}
+
+TEST(SpanInitList, pointer_and_size_resolves_to_pointer_count_ctor) {
+    bool data[4] = {true, false, true, false};
+    bool* ptr = data;
+    std::size_t n = 4;
+    bsp::span<const bool> s(ptr, n);
+    EXPECT_EQ(s.size(), 4u);
+    EXPECT_EQ(s.data(), data);
+}
+
+namespace init_list_detail {
+template <class T, class IL, class = void>
+struct constructible_from_il : std::false_type {};
+
+template <class T, class IL>
+struct constructible_from_il<T, IL, std::void_t<decltype(T(std::declval<IL>()))>>
+    : std::true_type {};
+}
+
+TEST(SpanInitList, non_const_element_type_rejected) {
+    static_assert(init_list_detail::constructible_from_il<
+                  bsp::span<const int>, std::initializer_list<int>>::value);
+    static_assert(!init_list_detail::constructible_from_il<
+                  bsp::span<int>, std::initializer_list<int>>::value);
+}
+
+TEST(SpanInitList, exact_type_match_required) {
+    static_assert(!init_list_detail::constructible_from_il<
+                  bsp::span<const float>, std::initializer_list<int>>::value);
+    static_assert(!init_list_detail::constructible_from_il<
+                  bsp::span<const int>, std::initializer_list<long>>::value);
 }
 
 // ---------------------------------------------------------------------------
