@@ -1,0 +1,17 @@
+{
+  "name": "beman-span",
+  "version-semver": "@VERSION@",
+  "description": "A Beman implementation of std::span",
+  "homepage": "https://github.com/bemanproject/span",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "dependencies": [
+    {
+      "name": "vcpkg-cmake",
+      "host": true
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "host": true
+    }
+  ]
+}

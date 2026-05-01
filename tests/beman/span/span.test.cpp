@@ -48,7 +48,7 @@ TEST(SpanConstruction, default_static_zero) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanConstruction, pointer_and_count_dynamic) {
-    int arr[] = {1, 2, 3, 4, 5};
+    int            arr[] = {1, 2, 3, 4, 5};
     bsp::span<int> s(arr, 5);
     EXPECT_EQ(s.size(), 5u);
     EXPECT_EQ(s.data(), arr);
@@ -56,7 +56,7 @@ TEST(SpanConstruction, pointer_and_count_dynamic) {
 }
 
 TEST(SpanConstruction, pointer_and_count_static) {
-    int arr[] = {10, 20, 30};
+    int               arr[] = {10, 20, 30};
     bsp::span<int, 3> s(arr, 3);
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s.data(), arr);
@@ -67,7 +67,7 @@ TEST(SpanConstruction, pointer_and_count_static) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanConstruction, pointer_pair) {
-    int arr[] = {5, 6, 7, 8};
+    int            arr[] = {5, 6, 7, 8};
     bsp::span<int> s(arr, arr + 4);
     EXPECT_EQ(s.size(), 4u);
     EXPECT_EQ(s[0], 5);
@@ -79,20 +79,20 @@ TEST(SpanConstruction, pointer_pair) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanConstruction, c_array_dynamic) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s.data(), arr);
 }
 
 TEST(SpanConstruction, c_array_static) {
-    int arr[] = {10, 20};
+    int               arr[] = {10, 20};
     bsp::span<int, 2> s(arr);
     EXPECT_EQ(s.size(), 2u);
 }
 
 TEST(SpanConstruction, c_array_deduction) {
-    int arr[] = {1, 2, 3, 4};
+    int       arr[] = {1, 2, 3, 4};
     bsp::span s(arr);
     static_assert(std::is_same_v<decltype(s), bsp::span<int, 4>>);
     EXPECT_EQ(s.size(), 4u);
@@ -104,27 +104,27 @@ TEST(SpanConstruction, c_array_deduction) {
 
 TEST(SpanConstruction, std_array_mutable) {
     std::array<int, 4> arr = {1, 2, 3, 4};
-    bsp::span<int> s(arr);
+    bsp::span<int>     s(arr);
     EXPECT_EQ(s.size(), 4u);
     EXPECT_EQ(s.data(), arr.data());
 }
 
 TEST(SpanConstruction, std_array_const) {
     const std::array<int, 3> arr = {7, 8, 9};
-    bsp::span<const int> s(arr);
+    bsp::span<const int>     s(arr);
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s[0], 7);
 }
 
 TEST(SpanConstruction, std_array_deduction_mutable) {
     std::array<double, 2> arr = {1.0, 2.0};
-    bsp::span s(arr);
+    bsp::span             s(arr);
     static_assert(std::is_same_v<decltype(s), bsp::span<double, 2>>);
 }
 
 TEST(SpanConstruction, std_array_deduction_const) {
     const std::array<double, 2> arr = {3.0, 4.0};
-    bsp::span s(arr);
+    bsp::span                   s(arr);
     static_assert(std::is_same_v<decltype(s), bsp::span<const double, 2>>);
 }
 
@@ -134,14 +134,14 @@ TEST(SpanConstruction, std_array_deduction_const) {
 
 TEST(SpanConstruction, from_vector) {
     std::vector<int> v = {1, 2, 3, 4, 5};
-    bsp::span<int> s(v);
+    bsp::span<int>   s(v);
     EXPECT_EQ(s.size(), 5u);
     EXPECT_EQ(s.data(), v.data());
 }
 
 TEST(SpanConstruction, from_const_vector) {
     const std::vector<int> v = {10, 20};
-    bsp::span<const int> s(v);
+    bsp::span<const int>   s(v);
     EXPECT_EQ(s.size(), 2u);
     EXPECT_EQ(s[1], 20);
 }
@@ -151,7 +151,7 @@ TEST(SpanConstruction, from_const_vector) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanConstruction, copy_dynamic_from_dynamic) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> a(arr);
     bsp::span<int> b(a);
     EXPECT_EQ(b.size(), 3u);
@@ -159,17 +159,17 @@ TEST(SpanConstruction, copy_dynamic_from_dynamic) {
 }
 
 TEST(SpanConstruction, const_from_mutable) {
-    int arr[] = {4, 5, 6};
-    bsp::span<int> mutable_s(arr);
+    int                  arr[] = {4, 5, 6};
+    bsp::span<int>       mutable_s(arr);
     bsp::span<const int> const_s(mutable_s);
     EXPECT_EQ(const_s.size(), 3u);
     EXPECT_EQ(const_s[0], 4);
 }
 
 TEST(SpanConstruction, dynamic_from_static) {
-    int arr[] = {1, 2, 3, 4};
+    int               arr[] = {1, 2, 3, 4};
     bsp::span<int, 4> fixed(arr);
-    bsp::span<int> dynamic(fixed);
+    bsp::span<int>    dynamic(fixed);
     EXPECT_EQ(dynamic.size(), 4u);
 }
 
@@ -247,14 +247,14 @@ TEST(SpanInitList, exact_type_match_required) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanElementAccess, subscript) {
-    int arr[] = {10, 20, 30, 40};
+    int            arr[] = {10, 20, 30, 40};
     bsp::span<int> s(arr);
     EXPECT_EQ(s[0], 10);
     EXPECT_EQ(s[3], 40);
 }
 
 TEST(SpanElementAccess, front_and_back) {
-    int arr[] = {100, 200, 300};
+    int            arr[] = {100, 200, 300};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.front(), 100);
     EXPECT_EQ(s.back(), 300);
@@ -262,15 +262,63 @@ TEST(SpanElementAccess, front_and_back) {
 
 TEST(SpanElementAccess, data_pointer) {
     std::array<int, 3> arr = {1, 2, 3};
-    bsp::span<int> s(arr);
+    bsp::span<int>     s(arr);
     EXPECT_EQ(s.data(), arr.data());
 }
 
 TEST(SpanElementAccess, write_through_span) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     s[1] = 99;
     EXPECT_EQ(arr[1], 99);
+}
+
+// at() bounds-checked access (P2821R5, C++26)
+TEST(SpanAt, in_bounds_returns_element) {
+    int arr[] = {10, 20, 30};
+    bsp::span<int> s(arr);
+    EXPECT_EQ(s.at(0), 10);
+    EXPECT_EQ(s.at(1), 20);
+    EXPECT_EQ(s.at(2), 30);
+}
+
+TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
+    int arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    s.at(1) = 42;
+    EXPECT_EQ(arr[1], 42);
+    static_assert(std::is_same_v<decltype(s.at(0)), int&>);
+}
+
+TEST(SpanAt, throws_out_of_range_at_size_boundary) {
+    int arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    EXPECT_THROW(s.at(3), std::out_of_range);
+}
+
+TEST(SpanAt, throws_out_of_range_well_past_size) {
+    int arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    EXPECT_THROW(s.at(100), std::out_of_range);
+}
+
+TEST(SpanAt, empty_span_always_throws) {
+    bsp::span<int> s;
+    EXPECT_THROW(s.at(0), std::out_of_range);
+}
+
+TEST(SpanAt, fixed_extent_in_bounds_and_out_of_range) {
+    int arr[] = {7, 8, 9, 10};
+    bsp::span<int, 4> s(arr);
+    EXPECT_EQ(s.at(3), 10);
+    EXPECT_THROW(s.at(4), std::out_of_range);
+}
+
+TEST(SpanAt, const_span_returns_reference_to_const) {
+    const int arr[] = {1, 2, 3};
+    bsp::span<const int> s(arr);
+    EXPECT_EQ(s.at(2), 3);
+    static_assert(std::is_same_v<decltype(s.at(0)), const int&>);
 }
 
 // ---------------------------------------------------------------------------
@@ -278,13 +326,13 @@ TEST(SpanElementAccess, write_through_span) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanObservers, size) {
-    int arr[] = {0, 1, 2, 3, 4};
+    int            arr[] = {0, 1, 2, 3, 4};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.size(), 5u);
 }
 
 TEST(SpanObservers, size_bytes) {
-    int arr[] = {0, 1, 2};
+    int            arr[] = {0, 1, 2};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.size_bytes(), 3 * sizeof(int));
 }
@@ -295,7 +343,7 @@ TEST(SpanObservers, empty_true) {
 }
 
 TEST(SpanObservers, empty_false) {
-    int arr[] = {1};
+    int            arr[] = {1};
     bsp::span<int> s(arr);
     EXPECT_FALSE(s.empty());
 }
@@ -305,18 +353,18 @@ TEST(SpanObservers, empty_false) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanIterators, range_for) {
-    int arr[] = {1, 2, 3, 4, 5};
+    int            arr[] = {1, 2, 3, 4, 5};
     bsp::span<int> s(arr);
-    int sum = 0;
+    int            sum = 0;
     for (int v : s)
         sum += v;
     EXPECT_EQ(sum, 15);
 }
 
 TEST(SpanIterators, begin_end) {
-    int arr[] = {5, 10, 15};
+    int            arr[] = {5, 10, 15};
     bsp::span<int> s(arr);
-    auto it = s.begin();
+    auto           it = s.begin();
     EXPECT_EQ(*it, 5);
     ++it;
     EXPECT_EQ(*it, 10);
@@ -324,8 +372,8 @@ TEST(SpanIterators, begin_end) {
 }
 
 TEST(SpanIterators, reverse_iteration) {
-    int arr[] = {1, 2, 3};
-    bsp::span<int> s(arr);
+    int              arr[] = {1, 2, 3};
+    bsp::span<int>   s(arr);
     std::vector<int> rev(s.rbegin(), s.rend());
     EXPECT_EQ(rev[0], 3);
     EXPECT_EQ(rev[1], 2);
@@ -333,19 +381,18 @@ TEST(SpanIterators, reverse_iteration) {
 }
 
 TEST(SpanIterators, cbegin_cend) {
-    int arr[] = {7, 8, 9};
+    int            arr[] = {7, 8, 9};
     bsp::span<int> s(arr);
     EXPECT_EQ(*s.cbegin(), 7);
     EXPECT_EQ(s.cend() - s.cbegin(), 3);
 
     static_assert(std::is_same_v<decltype(s.cbegin()), bsp::span<int>::const_iterator>);
     static_assert(std::is_same_v<bsp::span<int>::const_iterator, const int*>);
-    static_assert(std::is_same_v<decltype(s.crbegin()),
-                                 bsp::span<int>::const_reverse_iterator>);
+    static_assert(std::is_same_v<decltype(s.crbegin()), bsp::span<int>::const_reverse_iterator>);
 }
 
 TEST(SpanIterators, std_algorithm_sort) {
-    int arr[] = {5, 3, 1, 4, 2};
+    int            arr[] = {5, 3, 1, 4, 2};
     bsp::span<int> s(arr);
     std::sort(s.begin(), s.end());
     EXPECT_EQ(arr[0], 1);
@@ -354,7 +401,7 @@ TEST(SpanIterators, std_algorithm_sort) {
 
 TEST(SpanIterators, std_algorithm_iota) {
     std::array<int, 5> arr{};
-    bsp::span<int> s(arr);
+    bsp::span<int>     s(arr);
     std::iota(s.begin(), s.end(), 1);
     for (int i = 0; i < 5; ++i)
         EXPECT_EQ(arr[i], i + 1);
@@ -365,9 +412,9 @@ TEST(SpanIterators, std_algorithm_iota) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanSubviews, first_static) {
-    int arr[] = {1, 2, 3, 4, 5};
+    int               arr[] = {1, 2, 3, 4, 5};
     bsp::span<int, 5> s(arr);
-    auto f = s.first<3>();
+    auto              f = s.first<3>();
     static_assert(decltype(f)::extent == 3);
     EXPECT_EQ(f.size(), 3u);
     EXPECT_EQ(f[0], 1);
@@ -375,35 +422,35 @@ TEST(SpanSubviews, first_static) {
 }
 
 TEST(SpanSubviews, first_dynamic) {
-    int arr[] = {10, 20, 30, 40};
+    int            arr[] = {10, 20, 30, 40};
     bsp::span<int> s(arr);
-    auto f = s.first(2);
+    auto           f = s.first(2);
     EXPECT_EQ(f.size(), 2u);
     EXPECT_EQ(f[0], 10);
     EXPECT_EQ(f[1], 20);
 }
 
 TEST(SpanSubviews, last_static) {
-    int arr[] = {1, 2, 3, 4, 5};
+    int               arr[] = {1, 2, 3, 4, 5};
     bsp::span<int, 5> s(arr);
-    auto l = s.last<2>();
+    auto              l = s.last<2>();
     static_assert(decltype(l)::extent == 2);
     EXPECT_EQ(l[0], 4);
     EXPECT_EQ(l[1], 5);
 }
 
 TEST(SpanSubviews, last_dynamic) {
-    int arr[] = {10, 20, 30, 40};
+    int            arr[] = {10, 20, 30, 40};
     bsp::span<int> s(arr);
-    auto l = s.last(3);
+    auto           l = s.last(3);
     EXPECT_EQ(l.size(), 3u);
     EXPECT_EQ(l[0], 20);
 }
 
 TEST(SpanSubviews, subspan_static_offset) {
-    int arr[] = {0, 1, 2, 3, 4};
+    int               arr[] = {0, 1, 2, 3, 4};
     bsp::span<int, 5> s(arr);
-    auto sub = s.subspan<2>();
+    auto              sub = s.subspan<2>();
     static_assert(decltype(sub)::extent == 3);
     EXPECT_EQ(sub.size(), 3u);
     EXPECT_EQ(sub[0], 2);
@@ -411,9 +458,9 @@ TEST(SpanSubviews, subspan_static_offset) {
 }
 
 TEST(SpanSubviews, subspan_static_offset_and_count) {
-    int arr[] = {0, 1, 2, 3, 4};
+    int               arr[] = {0, 1, 2, 3, 4};
     bsp::span<int, 5> s(arr);
-    auto sub = s.subspan<1, 3>();
+    auto              sub = s.subspan<1, 3>();
     static_assert(decltype(sub)::extent == 3);
     EXPECT_EQ(sub.size(), 3u);
     EXPECT_EQ(sub[0], 1);
@@ -421,18 +468,18 @@ TEST(SpanSubviews, subspan_static_offset_and_count) {
 }
 
 TEST(SpanSubviews, subspan_dynamic) {
-    int arr[] = {10, 20, 30, 40, 50};
+    int            arr[] = {10, 20, 30, 40, 50};
     bsp::span<int> s(arr);
-    auto sub = s.subspan(1, 3);
+    auto           sub = s.subspan(1, 3);
     EXPECT_EQ(sub.size(), 3u);
     EXPECT_EQ(sub[0], 20);
     EXPECT_EQ(sub[2], 40);
 }
 
 TEST(SpanSubviews, subspan_dynamic_to_end) {
-    int arr[] = {1, 2, 3, 4};
+    int            arr[] = {1, 2, 3, 4};
     bsp::span<int> s(arr);
-    auto sub = s.subspan(2);
+    auto           sub = s.subspan(2);
     EXPECT_EQ(sub.size(), 2u);
     EXPECT_EQ(sub[0], 3);
     EXPECT_EQ(sub[1], 4);
@@ -443,25 +490,25 @@ TEST(SpanSubviews, subspan_dynamic_to_end) {
 // ---------------------------------------------------------------------------
 
 TEST(SpanObjectRepresentation, as_bytes) {
-    int arr[] = {1};
+    int            arr[] = {1};
     bsp::span<int> s(arr);
-    auto bytes = bsp::as_bytes(s);
+    auto           bytes = bsp::as_bytes(s);
     EXPECT_EQ(bytes.size(), sizeof(int));
     static_assert(std::is_same_v<decltype(bytes)::element_type, const std::byte>);
 }
 
 TEST(SpanObjectRepresentation, as_writable_bytes) {
-    int arr[] = {1};
+    int            arr[] = {1};
     bsp::span<int> s(arr);
-    auto bytes = bsp::as_writable_bytes(s);
+    auto           bytes = bsp::as_writable_bytes(s);
     EXPECT_EQ(bytes.size(), sizeof(int));
     static_assert(std::is_same_v<decltype(bytes)::element_type, std::byte>);
 }
 
 TEST(SpanObjectRepresentation, as_bytes_fixed_extent) {
-    int arr[3] = {1, 2, 3};
+    int               arr[3] = {1, 2, 3};
     bsp::span<int, 3> s(arr);
-    auto bytes = bsp::as_bytes(s);
+    auto              bytes = bsp::as_bytes(s);
     static_assert(decltype(bytes)::extent == 3 * sizeof(int));
     EXPECT_EQ(bytes.size(), 3 * sizeof(int));
 }
@@ -488,12 +535,12 @@ TEST(SpanConstexpr, size_and_access) {
 // ---------------------------------------------------------------------------
 
 #if defined(__cpp_lib_span) && __cpp_lib_span >= 202002L
-#include <span>
+    #include <span>
 
 TEST(SpanCompareWithStd, same_size_and_values) {
     std::vector<int> v = {1, 2, 3, 4, 5};
-    std::span<int>  std_s(v);
-    bsp::span<int> beman_s(v);
+    std::span<int>   std_s(v);
+    bsp::span<int>   beman_s(v);
 
     EXPECT_EQ(std_s.size(), beman_s.size());
     for (std::size_t i = 0; i < std_s.size(); ++i) {
