@@ -22,6 +22,7 @@
 #include <iterator>
 #include <limits>
 #include <ranges>
+#include <stdexcept>
 #include <type_traits>
 
 namespace beman::span {
@@ -222,6 +223,14 @@ class span {
     // Pre: idx < size().
     constexpr reference operator[](size_type idx) const noexcept {
         assert(idx < size());
+        return data_[idx];
+    }
+
+    // at(idx): bounds-checked access; throws std::out_of_range if idx >= size() (P2821R5).
+    constexpr reference at(size_type idx) const {
+        if (idx >= size()) {
+            throw std::out_of_range("beman::span::at: index out of range");
+        }
         return data_[idx];
     }
 
