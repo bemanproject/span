@@ -8,6 +8,8 @@
 #include <array>
 #include <cstddef>
 #include <numeric>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace bsp = beman::span;
@@ -203,7 +205,7 @@ TEST(SpanElementAccess, write_through_span) {
 
 // at() bounds-checked access (P2821R5, C++26)
 TEST(SpanAt, in_bounds_returns_element) {
-    int arr[] = {10, 20, 30};
+    int            arr[] = {10, 20, 30};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.at(0), 10);
     EXPECT_EQ(s.at(1), 20);
@@ -211,7 +213,7 @@ TEST(SpanAt, in_bounds_returns_element) {
 }
 
 TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     s.at(1) = 42;
     EXPECT_EQ(arr[1], 42);
@@ -219,13 +221,13 @@ TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
 }
 
 TEST(SpanAt, throws_out_of_range_at_size_boundary) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(3), std::out_of_range);
 }
 
 TEST(SpanAt, throws_out_of_range_well_past_size) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(100), std::out_of_range);
 }
@@ -236,14 +238,14 @@ TEST(SpanAt, empty_span_always_throws) {
 }
 
 TEST(SpanAt, fixed_extent_in_bounds_and_out_of_range) {
-    int arr[] = {7, 8, 9, 10};
+    int               arr[] = {7, 8, 9, 10};
     bsp::span<int, 4> s(arr);
     EXPECT_EQ(s.at(3), 10);
     EXPECT_THROW(s.at(4), std::out_of_range);
 }
 
 TEST(SpanAt, const_span_returns_reference_to_const) {
-    const int arr[] = {1, 2, 3};
+    const int            arr[] = {1, 2, 3};
     bsp::span<const int> s(arr);
     EXPECT_EQ(s.at(2), 3);
     static_assert(std::is_same_v<decltype(s.at(0)), const int&>);
@@ -411,6 +413,95 @@ TEST(SpanSubviews, subspan_dynamic_to_end) {
     EXPECT_EQ(sub.size(), 2u);
     EXPECT_EQ(sub[0], 3);
     EXPECT_EQ(sub[1], 4);
+}
+
+// ---------------------------------------------------------------------------
+// remove_prefix / remove_suffix (P3729)
+// ---------------------------------------------------------------------------
+
+TEST(SpanModifiers, remove_prefix_zero_is_noop) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_prefix(0);
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_EQ(s.data(), arr);
+}
+
+TEST(SpanModifiers, remove_prefix_partial) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_prefix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s.data(), arr + 2);
+    EXPECT_EQ(s[0], 3);
+    EXPECT_EQ(s[2], 5);
+}
+
+TEST(SpanModifiers, remove_prefix_full_empties_span) {
+    int            arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    s.remove_prefix(s.size());
+    EXPECT_EQ(s.size(), 0u);
+    EXPECT_TRUE(s.empty());
+}
+
+TEST(SpanModifiers, remove_suffix_zero_is_noop) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_suffix(0);
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_EQ(s.data(), arr);
+}
+
+TEST(SpanModifiers, remove_suffix_partial) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_suffix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s.data(), arr);
+    EXPECT_EQ(s[0], 1);
+    EXPECT_EQ(s[2], 3);
+}
+
+TEST(SpanModifiers, remove_suffix_full_empties_span) {
+    int            arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    s.remove_suffix(s.size());
+    EXPECT_EQ(s.size(), 0u);
+    EXPECT_TRUE(s.empty());
+}
+
+TEST(SpanModifiers, remove_prefix_and_suffix_combined) {
+    int            arr[] = {10, 20, 30, 40, 50, 60};
+    bsp::span<int> s(arr);
+    s.remove_prefix(1);
+    s.remove_suffix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s[0], 20);
+    EXPECT_EQ(s[2], 40);
+}
+
+namespace modifiers_detail {
+template <class T, class = void>
+struct has_remove_prefix : std::false_type {};
+
+template <class T>
+struct has_remove_prefix<T, std::void_t<decltype(std::declval<T&>().remove_prefix(std::size_t{0}))>> : std::true_type {
+};
+
+template <class T, class = void>
+struct has_remove_suffix : std::false_type {};
+
+template <class T>
+struct has_remove_suffix<T, std::void_t<decltype(std::declval<T&>().remove_suffix(std::size_t{0}))>> : std::true_type {
+};
+} // namespace modifiers_detail
+
+TEST(SpanModifiers, fixed_extent_has_no_modifiers) {
+    static_assert(modifiers_detail::has_remove_prefix<bsp::span<int>>::value);
+    static_assert(modifiers_detail::has_remove_suffix<bsp::span<int>>::value);
+    static_assert(!modifiers_detail::has_remove_prefix<bsp::span<int, 3>>::value);
+    static_assert(!modifiers_detail::has_remove_suffix<bsp::span<int, 3>>::value);
 }
 
 // ---------------------------------------------------------------------------
