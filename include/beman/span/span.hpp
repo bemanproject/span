@@ -305,8 +305,7 @@ auto as_writable_bytes(span<ElementType, Extent> s) noexcept
 // Lives in beman::span so ADL picks it up for structured bindings on span<T, N>.
 template <std::size_t I, class ElementType, std::size_t Extent>
 constexpr ElementType& get(span<ElementType, Extent> s) noexcept {
-    static_assert(Extent != dynamic_extent,
-                  "beman::span::get<I> requires a fixed-extent span");
+    static_assert(Extent != dynamic_extent, "beman::span::get<I> requires a fixed-extent span");
     static_assert(I < Extent, "beman::span::get<I>: index out of range");
     return s[I];
 }
@@ -321,8 +320,7 @@ namespace std {
 
 template <class ElementType, std::size_t Extent>
     requires(Extent != ::beman::span::dynamic_extent)
-struct tuple_size<::beman::span::span<ElementType, Extent>>
-    : integral_constant<std::size_t, Extent> {};
+struct tuple_size<::beman::span::span<ElementType, Extent>> : integral_constant<std::size_t, Extent> {};
 
 template <std::size_t I, class ElementType, std::size_t Extent>
     requires(Extent != ::beman::span::dynamic_extent && I < Extent)

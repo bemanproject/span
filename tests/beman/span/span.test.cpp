@@ -205,7 +205,7 @@ TEST(SpanElementAccess, write_through_span) {
 
 // at() bounds-checked access (P2821R5, C++26)
 TEST(SpanAt, in_bounds_returns_element) {
-    int arr[] = {10, 20, 30};
+    int            arr[] = {10, 20, 30};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.at(0), 10);
     EXPECT_EQ(s.at(1), 20);
@@ -213,7 +213,7 @@ TEST(SpanAt, in_bounds_returns_element) {
 }
 
 TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     s.at(1) = 42;
     EXPECT_EQ(arr[1], 42);
@@ -221,13 +221,13 @@ TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
 }
 
 TEST(SpanAt, throws_out_of_range_at_size_boundary) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(3), std::out_of_range);
 }
 
 TEST(SpanAt, throws_out_of_range_well_past_size) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(100), std::out_of_range);
 }
@@ -238,14 +238,14 @@ TEST(SpanAt, empty_span_always_throws) {
 }
 
 TEST(SpanAt, fixed_extent_in_bounds_and_out_of_range) {
-    int arr[] = {7, 8, 9, 10};
+    int               arr[] = {7, 8, 9, 10};
     bsp::span<int, 4> s(arr);
     EXPECT_EQ(s.at(3), 10);
     EXPECT_THROW(s.at(4), std::out_of_range);
 }
 
 TEST(SpanAt, const_span_returns_reference_to_const) {
-    const int arr[] = {1, 2, 3};
+    const int            arr[] = {1, 2, 3};
     bsp::span<const int> s(arr);
     EXPECT_EQ(s.at(2), 3);
     static_assert(std::is_same_v<decltype(s.at(0)), const int&>);
@@ -465,9 +465,8 @@ template <class T, class = void>
 struct has_tuple_size : std::false_type {};
 
 template <class T>
-struct has_tuple_size<T, std::void_t<decltype(std::tuple_size<T>::value)>>
-    : std::true_type {};
-}
+struct has_tuple_size<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type {};
+} // namespace tuple_test_detail
 
 TEST(SpanTuple, tuple_size_value) {
     static_assert(std::tuple_size_v<bsp::span<int, 3>> == 3);
@@ -475,19 +474,16 @@ TEST(SpanTuple, tuple_size_value) {
     static_assert(std::tuple_size_v<bsp::span<int, 0>> == 0);
 }
 
-TEST(SpanTuple, tuple_size_top_level_const_ignored) {
-    static_assert(std::tuple_size_v<const bsp::span<int, 3>> == 3);
-}
+TEST(SpanTuple, tuple_size_top_level_const_ignored) { static_assert(std::tuple_size_v<const bsp::span<int, 3>> == 3); }
 
 TEST(SpanTuple, tuple_element_yields_reference) {
     static_assert(std::is_same_v<std::tuple_element_t<0, bsp::span<int, 3>>, int&>);
-    static_assert(std::is_same_v<std::tuple_element_t<2, bsp::span<const double, 5>>,
-                                 const double&>);
+    static_assert(std::is_same_v<std::tuple_element_t<2, bsp::span<const double, 5>>, const double&>);
     static_assert(std::is_same_v<std::tuple_element_t<0, const bsp::span<int, 3>>, int&>);
 }
 
 TEST(SpanTuple, get_returns_reference_to_underlying_element) {
-    int arr[] = {10, 20, 30};
+    int               arr[] = {10, 20, 30};
     bsp::span<int, 3> s(arr);
 
     static_assert(std::is_same_v<decltype(get<0>(s)), int&>);
@@ -499,7 +495,7 @@ TEST(SpanTuple, get_returns_reference_to_underlying_element) {
 }
 
 TEST(SpanTuple, structured_binding) {
-    int arr[] = {1, 2, 3};
+    int               arr[] = {1, 2, 3};
     bsp::span<int, 3> s(arr);
 
     auto& [a, b, c] = s;
