@@ -23,6 +23,7 @@
 #include <limits>
 #include <ranges>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 
 namespace beman::span {
@@ -315,6 +316,33 @@ auto as_writable_bytes(span<ElementType, Extent> s) noexcept
     return return_type{reinterpret_cast<std::byte*>(s.data()), s.size_bytes()};
 }
 
+// [span.tuple] Tuple interface for fixed-size span (P3786R2).
+// Lives in beman::span so ADL picks it up for structured bindings on span<T, N>.
+template <std::size_t I, class ElementType, std::size_t Extent>
+constexpr ElementType& get(span<ElementType, Extent> s) noexcept {
+    static_assert(Extent != dynamic_extent, "beman::span::get<I> requires a fixed-extent span");
+    static_assert(I < Extent, "beman::span::get<I>: index out of range");
+    return s[I];
+}
+
 } // namespace beman::span
+
+// std::tuple_size / std::tuple_element specializations for fixed-size span (P3786R2).
+// dynamic_extent is excluded via constrained partial specialization, so
+// std::tuple_size<span<T>> falls back to the (undefined) primary template -
+// SFINAE-friendly for the tuple-like concept.
+namespace std {
+
+template <class ElementType, std::size_t Extent>
+    requires(Extent != ::beman::span::dynamic_extent)
+struct tuple_size<::beman::span::span<ElementType, Extent>> : integral_constant<std::size_t, Extent> {};
+
+template <std::size_t I, class ElementType, std::size_t Extent>
+    requires(Extent != ::beman::span::dynamic_extent && I < Extent)
+struct tuple_element<I, ::beman::span::span<ElementType, Extent>> {
+    using type = ElementType&;
+};
+
+} // namespace std
 
 #endif // BEMAN_SPAN_SPAN_HPP

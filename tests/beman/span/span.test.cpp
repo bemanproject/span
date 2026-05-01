@@ -8,6 +8,7 @@
 #include <array>
 #include <cstddef>
 #include <numeric>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -547,6 +548,58 @@ TEST(SpanConstexpr, size_and_access) {
     static_assert(s.front() == 1);
     static_assert(s.back() == 3);
     EXPECT_EQ(s.size(), 3u);
+}
+
+namespace tuple_test_detail {
+template <class T, class = void>
+struct has_tuple_size : std::false_type {};
+
+template <class T>
+struct has_tuple_size<T, std::void_t<decltype(std::tuple_size<T>::value)>> : std::true_type {};
+} // namespace tuple_test_detail
+
+TEST(SpanTuple, tuple_size_value) {
+    static_assert(std::tuple_size_v<bsp::span<int, 3>> == 3);
+    static_assert(std::tuple_size_v<bsp::span<const double, 5>> == 5);
+    static_assert(std::tuple_size_v<bsp::span<int, 0>> == 0);
+}
+
+TEST(SpanTuple, tuple_size_top_level_const_ignored) { static_assert(std::tuple_size_v<const bsp::span<int, 3>> == 3); }
+
+TEST(SpanTuple, tuple_element_yields_reference) {
+    static_assert(std::is_same_v<std::tuple_element_t<0, bsp::span<int, 3>>, int&>);
+    static_assert(std::is_same_v<std::tuple_element_t<2, bsp::span<const double, 5>>, const double&>);
+    static_assert(std::is_same_v<std::tuple_element_t<0, const bsp::span<int, 3>>, int&>);
+}
+
+TEST(SpanTuple, get_returns_reference_to_underlying_element) {
+    int               arr[] = {10, 20, 30};
+    bsp::span<int, 3> s(arr);
+
+    static_assert(std::is_same_v<decltype(get<0>(s)), int&>);
+    EXPECT_EQ(get<0>(s), 10);
+    EXPECT_EQ(get<2>(s), 30);
+
+    get<1>(s) = 99;
+    EXPECT_EQ(arr[1], 99);
+}
+
+TEST(SpanTuple, structured_binding) {
+    int               arr[] = {1, 2, 3};
+    bsp::span<int, 3> s(arr);
+
+    auto& [a, b, c] = s;
+    EXPECT_EQ(a, 1);
+    EXPECT_EQ(b, 2);
+    EXPECT_EQ(c, 3);
+
+    a = 100;
+    EXPECT_EQ(arr[0], 100);
+}
+
+TEST(SpanTuple, dynamic_extent_excluded_from_tuple_protocol) {
+    static_assert(tuple_test_detail::has_tuple_size<bsp::span<int, 3>>::value);
+    static_assert(!tuple_test_detail::has_tuple_size<bsp::span<int>>::value);
 }
 
 // ---------------------------------------------------------------------------
