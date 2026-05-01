@@ -13,7 +13,8 @@ template <class T, std::size_t E>
 void print(const char* label, bsp::span<T, E> s) {
     std::cout << label << ": [";
     for (std::size_t i = 0; i < s.size(); ++i) {
-        if (i) std::cout << ", ";
+        if (i)
+            std::cout << ", ";
         std::cout << s[i];
     }
     std::cout << "]  extent=";
@@ -47,7 +48,7 @@ int main() {
 
     // Dynamic variants
     bsp::span<int> dyn(arr);
-    auto df = dyn.first(4);
+    auto           df = dyn.first(4);
     print("dyn.first(4) ", df);
 
     auto dl = dyn.last(2);
