@@ -6,8 +6,5 @@ message("Examples to be built: ${ALL_EXAMPLES}")
 foreach(example ${ALL_EXAMPLES})
     add_executable(beman.span.examples.${example})
     target_sources(beman.span.examples.${example} PRIVATE ${example}.cpp)
-    target_link_libraries(
-        beman.span.examples.${example}
-        PRIVATE beman::span
-    )
+    target_link_libraries(beman.span.examples.${example} PRIVATE beman::span)
 endforeach()

@@ -15,7 +15,8 @@ template <class T, std::size_t E>
 void print_span(beman::span::span<T, E> s) {
     std::cout << "[";
     for (std::size_t i = 0; i < s.size(); ++i) {
-        if (i) std::cout << ", ";
+        if (i)
+            std::cout << ", ";
         std::cout << s[i];
     }
     std::cout << "]  (size=" << s.size() << ")\n";
@@ -34,7 +35,7 @@ int main() {
     // ----------------------------------------------------------------
     // 1. Construct from a C-array (fixed extent deduced)
     // ----------------------------------------------------------------
-    int c_arr[] = {10, 20, 30, 40, 50};
+    int               c_arr[] = {10, 20, 30, 40, 50};
     beman::span::span s1(c_arr); // span<int, 5>
     std::cout << "From C-array:   ";
     print_span(s1);
@@ -73,6 +74,5 @@ int main() {
     // ----------------------------------------------------------------
     // 6. size_bytes
     // ----------------------------------------------------------------
-    std::cout << "size_bytes=" << s3.size_bytes() << " (=" << s3.size()
-              << " * " << sizeof(int) << ")\n";
+    std::cout << "size_bytes=" << s3.size_bytes() << " (=" << s3.size() << " * " << sizeof(int) << ")\n";
 }
