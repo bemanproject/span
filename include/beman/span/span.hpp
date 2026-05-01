@@ -148,12 +148,10 @@ class span {
     // T_ defaults to ElementType so is_const_v stays dependent on a function
     // template parameter; otherwise it would hard-error in span<int>.
     template <class InitListValueType,
-              class T_ = ElementType,
-              std::enable_if_t<std::is_const_v<T_>, int> = 0,
-              std::enable_if_t<std::is_same_v<InitListValueType, std::remove_cv_t<T_>>,
-                               int> = 0>
-    constexpr explicit(Extent != dynamic_extent)
-        span(std::initializer_list<InitListValueType> il)
+              class T_                                                                       = ElementType,
+              std::enable_if_t<std::is_const_v<T_>, int>                                     = 0,
+              std::enable_if_t<std::is_same_v<InitListValueType, std::remove_cv_t<T_>>, int> = 0>
+    constexpr explicit(Extent != dynamic_extent) span(std::initializer_list<InitListValueType> il)
         : data_(il.begin()), size_(il.size()) {
         if constexpr (Extent != dynamic_extent) {
             assert(il.size() == Extent);
