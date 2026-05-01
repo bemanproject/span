@@ -203,7 +203,7 @@ TEST(SpanElementAccess, write_through_span) {
 
 // at() bounds-checked access (P2821R5, C++26)
 TEST(SpanAt, in_bounds_returns_element) {
-    int arr[] = {10, 20, 30};
+    int            arr[] = {10, 20, 30};
     bsp::span<int> s(arr);
     EXPECT_EQ(s.at(0), 10);
     EXPECT_EQ(s.at(1), 20);
@@ -211,7 +211,7 @@ TEST(SpanAt, in_bounds_returns_element) {
 }
 
 TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     s.at(1) = 42;
     EXPECT_EQ(arr[1], 42);
@@ -219,13 +219,13 @@ TEST(SpanAt, returns_lvalue_reference_for_mutable_span) {
 }
 
 TEST(SpanAt, throws_out_of_range_at_size_boundary) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(3), std::out_of_range);
 }
 
 TEST(SpanAt, throws_out_of_range_well_past_size) {
-    int arr[] = {1, 2, 3};
+    int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
     EXPECT_THROW(s.at(100), std::out_of_range);
 }
@@ -236,14 +236,14 @@ TEST(SpanAt, empty_span_always_throws) {
 }
 
 TEST(SpanAt, fixed_extent_in_bounds_and_out_of_range) {
-    int arr[] = {7, 8, 9, 10};
+    int               arr[] = {7, 8, 9, 10};
     bsp::span<int, 4> s(arr);
     EXPECT_EQ(s.at(3), 10);
     EXPECT_THROW(s.at(4), std::out_of_range);
 }
 
 TEST(SpanAt, const_span_returns_reference_to_const) {
-    const int arr[] = {1, 2, 3};
+    const int            arr[] = {1, 2, 3};
     bsp::span<const int> s(arr);
     EXPECT_EQ(s.at(2), 3);
     static_assert(std::is_same_v<decltype(s.at(0)), const int&>);
