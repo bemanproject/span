@@ -10,6 +10,7 @@
 #include <numeric>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace bsp = beman::span;
@@ -413,6 +414,95 @@ TEST(SpanSubviews, subspan_dynamic_to_end) {
     EXPECT_EQ(sub.size(), 2u);
     EXPECT_EQ(sub[0], 3);
     EXPECT_EQ(sub[1], 4);
+}
+
+// ---------------------------------------------------------------------------
+// remove_prefix / remove_suffix (P3729)
+// ---------------------------------------------------------------------------
+
+TEST(SpanModifiers, remove_prefix_zero_is_noop) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_prefix(0);
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_EQ(s.data(), arr);
+}
+
+TEST(SpanModifiers, remove_prefix_partial) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_prefix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s.data(), arr + 2);
+    EXPECT_EQ(s[0], 3);
+    EXPECT_EQ(s[2], 5);
+}
+
+TEST(SpanModifiers, remove_prefix_full_empties_span) {
+    int            arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    s.remove_prefix(s.size());
+    EXPECT_EQ(s.size(), 0u);
+    EXPECT_TRUE(s.empty());
+}
+
+TEST(SpanModifiers, remove_suffix_zero_is_noop) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_suffix(0);
+    EXPECT_EQ(s.size(), 5u);
+    EXPECT_EQ(s.data(), arr);
+}
+
+TEST(SpanModifiers, remove_suffix_partial) {
+    int            arr[] = {1, 2, 3, 4, 5};
+    bsp::span<int> s(arr);
+    s.remove_suffix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s.data(), arr);
+    EXPECT_EQ(s[0], 1);
+    EXPECT_EQ(s[2], 3);
+}
+
+TEST(SpanModifiers, remove_suffix_full_empties_span) {
+    int            arr[] = {1, 2, 3};
+    bsp::span<int> s(arr);
+    s.remove_suffix(s.size());
+    EXPECT_EQ(s.size(), 0u);
+    EXPECT_TRUE(s.empty());
+}
+
+TEST(SpanModifiers, remove_prefix_and_suffix_combined) {
+    int            arr[] = {10, 20, 30, 40, 50, 60};
+    bsp::span<int> s(arr);
+    s.remove_prefix(1);
+    s.remove_suffix(2);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s[0], 20);
+    EXPECT_EQ(s[2], 40);
+}
+
+namespace modifiers_detail {
+template <class T, class = void>
+struct has_remove_prefix : std::false_type {};
+
+template <class T>
+struct has_remove_prefix<T, std::void_t<decltype(std::declval<T&>().remove_prefix(std::size_t{0}))>> : std::true_type {
+};
+
+template <class T, class = void>
+struct has_remove_suffix : std::false_type {};
+
+template <class T>
+struct has_remove_suffix<T, std::void_t<decltype(std::declval<T&>().remove_suffix(std::size_t{0}))>> : std::true_type {
+};
+} // namespace modifiers_detail
+
+TEST(SpanModifiers, fixed_extent_has_no_modifiers) {
+    static_assert(modifiers_detail::has_remove_prefix<bsp::span<int>>::value);
+    static_assert(modifiers_detail::has_remove_suffix<bsp::span<int>>::value);
+    static_assert(!modifiers_detail::has_remove_prefix<bsp::span<int, 3>>::value);
+    static_assert(!modifiers_detail::has_remove_suffix<bsp::span<int, 3>>::value);
 }
 
 // ---------------------------------------------------------------------------
