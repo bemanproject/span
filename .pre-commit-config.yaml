@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
@@ -39,10 +40,11 @@ repos:
     hooks:
       - id: codespell
 
-    # Beman Standard checking via beman-tidy
+  # Beman Standard checking via beman-tidy
   - repo: https://github.com/bemanproject/beman-tidy
-    rev: v0.4.1
+    rev: v0.5.1
     hooks:
-    - id: beman-tidy
+      - id: beman-tidy
+        args: [".", "--verbose"]
 
-exclude: 'cookiecutter/|infra/|port/'
+exclude: 'infra/|port/'
