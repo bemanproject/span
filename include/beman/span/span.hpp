@@ -136,6 +136,10 @@ class span {
     constexpr explicit(Extent != dynamic_extent) span(Range&& r)
         : data_(std::ranges::data(r)), size_(std::ranges::size(r)) {
         if constexpr (Extent != dynamic_extent) {
+            if constexpr (requires { std::integral_constant<size_type, std::ranges::size(r)>{}; }) {
+                static_assert(std::ranges::size(r) == Extent,
+                              "span extent does not match the range's constant size (LWG 4397)");
+            }
             assert(std::ranges::size(r) == Extent);
         }
     }
