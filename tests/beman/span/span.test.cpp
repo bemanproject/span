@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <initializer_list>
 #include <numeric>
+#include <ranges>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -144,6 +145,19 @@ TEST(SpanConstruction, from_const_vector) {
     bsp::span<const int>   s(v);
     EXPECT_EQ(s.size(), 2u);
     EXPECT_EQ(s[1], 20);
+}
+
+TEST(SpanConstruction, lwg4397_constant_size_matches_extent) {
+    bsp::span<int, 0> s(std::views::empty<int>);
+    EXPECT_EQ(s.size(), 0u);
+    EXPECT_TRUE(s.empty());
+}
+
+TEST(SpanConstruction, lwg4397_runtime_sized_range_not_rejected) {
+    std::vector<int>  v(3);
+    bsp::span<int, 3> s(v);
+    EXPECT_EQ(s.size(), 3u);
+    EXPECT_EQ(s.data(), v.data());
 }
 
 // ---------------------------------------------------------------------------
