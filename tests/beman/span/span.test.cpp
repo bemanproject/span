@@ -95,6 +95,7 @@ TEST(SpanConstruction, c_array_dynamic) {
 TEST(SpanConstruction, c_array_static) {
     int               arr[] = {10, 20};
     bsp::span<int, 2> s(arr);
+    static_assert(sizeof(s) == sizeof(int*));
     EXPECT_EQ(s.size(), 2u);
 }
 
@@ -210,6 +211,7 @@ TEST(SpanConstruction, dynamic_from_static) {
 
 TEST(SpanInitList, dynamic_from_braced_list) {
     auto verify = [](bsp::span<const int> s) {
+        static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
         EXPECT_EQ(s.size(), 3u);
         EXPECT_EQ(s[0], 1);
         EXPECT_EQ(s[1], 2);
@@ -220,6 +222,7 @@ TEST(SpanInitList, dynamic_from_braced_list) {
 
 TEST(SpanInitList, fixed_extent_from_braced_list) {
     auto verify = [](bsp::span<const int, 3> s) {
+        static_assert(sizeof(s) == sizeof(int*));
         EXPECT_EQ(s.size(), 3u);
         EXPECT_EQ(s[0], 1);
         EXPECT_EQ(s[2], 3);
@@ -229,6 +232,7 @@ TEST(SpanInitList, fixed_extent_from_braced_list) {
 
 TEST(SpanInitList, const_bool_from_braced_list) {
     auto verify = [](bsp::span<const bool> s) {
+        static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
         EXPECT_EQ(s.size(), 3u);
         EXPECT_TRUE(s[0]);
         EXPECT_FALSE(s[1]);
@@ -629,6 +633,7 @@ TEST(SpanObjectRepresentation, as_writable_bytes) {
 TEST(SpanObjectRepresentation, as_bytes_fixed_extent) {
     int               arr[3] = {1, 2, 3};
     bsp::span<int, 3> s(arr);
+    static_assert(sizeof(s) == sizeof(int*));
     auto              bytes = bsp::as_bytes(s);
     static_assert(decltype(bytes)::extent == 3 * sizeof(int));
     EXPECT_EQ(bytes.size(), 3 * sizeof(int));
@@ -644,6 +649,7 @@ static constexpr int kConstexprArr[] = {1, 2, 3};
 
 TEST(SpanConstexpr, size_and_access) {
     constexpr bsp::span<const int, 3> s(kConstexprArr);
+    static_assert(sizeof(s) == sizeof(int*));
     static_assert(s.size() == 3);
     static_assert(s[0] == 1);
     static_assert(s.front() == 1);
