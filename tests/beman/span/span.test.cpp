@@ -33,6 +33,7 @@ TEST(SpanTest, static_extent_constant) {
 
 TEST(SpanConstruction, default_dynamic) {
     bsp::span<int> s;
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 0u);
     EXPECT_EQ(s.data(), nullptr);
     EXPECT_TRUE(s.empty());
@@ -40,6 +41,7 @@ TEST(SpanConstruction, default_dynamic) {
 
 TEST(SpanConstruction, default_static_zero) {
     bsp::span<int, 0> s;
+    static_assert(sizeof(s) == sizeof(int*));
     EXPECT_EQ(s.size(), 0u);
     EXPECT_TRUE(s.empty());
 }
@@ -51,6 +53,7 @@ TEST(SpanConstruction, default_static_zero) {
 TEST(SpanConstruction, pointer_and_count_dynamic) {
     int            arr[] = {1, 2, 3, 4, 5};
     bsp::span<int> s(arr, 5);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 5u);
     EXPECT_EQ(s.data(), arr);
     EXPECT_FALSE(s.empty());
@@ -59,6 +62,7 @@ TEST(SpanConstruction, pointer_and_count_dynamic) {
 TEST(SpanConstruction, pointer_and_count_static) {
     int               arr[] = {10, 20, 30};
     bsp::span<int, 3> s(arr, 3);
+    static_assert(sizeof(s) == sizeof(int*));
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s.data(), arr);
 }
@@ -70,6 +74,7 @@ TEST(SpanConstruction, pointer_and_count_static) {
 TEST(SpanConstruction, pointer_pair) {
     int            arr[] = {5, 6, 7, 8};
     bsp::span<int> s(arr, arr + 4);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 4u);
     EXPECT_EQ(s[0], 5);
     EXPECT_EQ(s[3], 8);
@@ -82,6 +87,7 @@ TEST(SpanConstruction, pointer_pair) {
 TEST(SpanConstruction, c_array_dynamic) {
     int            arr[] = {1, 2, 3};
     bsp::span<int> s(arr);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s.data(), arr);
 }
@@ -95,6 +101,7 @@ TEST(SpanConstruction, c_array_static) {
 TEST(SpanConstruction, c_array_deduction) {
     int       arr[] = {1, 2, 3, 4};
     bsp::span s(arr);
+    static_assert(sizeof(s) == sizeof(int*));
     static_assert(std::is_same_v<decltype(s), bsp::span<int, 4>>);
     EXPECT_EQ(s.size(), 4u);
 }
@@ -106,6 +113,7 @@ TEST(SpanConstruction, c_array_deduction) {
 TEST(SpanConstruction, std_array_mutable) {
     std::array<int, 4> arr = {1, 2, 3, 4};
     bsp::span<int>     s(arr);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 4u);
     EXPECT_EQ(s.data(), arr.data());
 }
@@ -113,6 +121,7 @@ TEST(SpanConstruction, std_array_mutable) {
 TEST(SpanConstruction, std_array_const) {
     const std::array<int, 3> arr = {7, 8, 9};
     bsp::span<const int>     s(arr);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s[0], 7);
 }
@@ -121,12 +130,14 @@ TEST(SpanConstruction, std_array_deduction_mutable) {
     std::array<double, 2> arr = {1.0, 2.0};
     bsp::span             s(arr);
     static_assert(std::is_same_v<decltype(s), bsp::span<double, 2>>);
+    static_assert(sizeof(s) == sizeof(int*));
 }
 
 TEST(SpanConstruction, std_array_deduction_const) {
     const std::array<double, 2> arr = {3.0, 4.0};
     bsp::span                   s(arr);
     static_assert(std::is_same_v<decltype(s), bsp::span<const double, 2>>);
+    static_assert(sizeof(s) == sizeof(int*));
 }
 
 // ---------------------------------------------------------------------------
@@ -136,6 +147,7 @@ TEST(SpanConstruction, std_array_deduction_const) {
 TEST(SpanConstruction, from_vector) {
     std::vector<int> v = {1, 2, 3, 4, 5};
     bsp::span<int>   s(v);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 5u);
     EXPECT_EQ(s.data(), v.data());
 }
@@ -143,12 +155,14 @@ TEST(SpanConstruction, from_vector) {
 TEST(SpanConstruction, from_const_vector) {
     const std::vector<int> v = {10, 20};
     bsp::span<const int>   s(v);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 2u);
     EXPECT_EQ(s[1], 20);
 }
 
 TEST(SpanConstruction, lwg4397_constant_size_matches_extent) {
     bsp::span<int, 0> s(std::views::empty<int>);
+    static_assert(sizeof(s) == sizeof(int*));
     EXPECT_EQ(s.size(), 0u);
     EXPECT_TRUE(s.empty());
 }
@@ -156,6 +170,7 @@ TEST(SpanConstruction, lwg4397_constant_size_matches_extent) {
 TEST(SpanConstruction, lwg4397_runtime_sized_range_not_rejected) {
     std::vector<int>  v(3);
     bsp::span<int, 3> s(v);
+    static_assert(sizeof(s) == sizeof(int*));
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s.data(), v.data());
 }
@@ -168,6 +183,8 @@ TEST(SpanConstruction, copy_dynamic_from_dynamic) {
     int            arr[] = {1, 2, 3};
     bsp::span<int> a(arr);
     bsp::span<int> b(a);
+    static_assert(sizeof(a) == sizeof(int*) + sizeof(std::size_t));
+    static_assert(sizeof(b) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(b.size(), 3u);
     EXPECT_EQ(b.data(), arr);
 }
@@ -176,6 +193,8 @@ TEST(SpanConstruction, const_from_mutable) {
     int                  arr[] = {4, 5, 6};
     bsp::span<int>       mutable_s(arr);
     bsp::span<const int> const_s(mutable_s);
+    static_assert(sizeof(mutable_s) == sizeof(int*) + sizeof(std::size_t));
+    static_assert(sizeof(const_s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(const_s.size(), 3u);
     EXPECT_EQ(const_s[0], 4);
 }
@@ -184,6 +203,8 @@ TEST(SpanConstruction, dynamic_from_static) {
     int               arr[] = {1, 2, 3, 4};
     bsp::span<int, 4> fixed(arr);
     bsp::span<int>    dynamic(fixed);
+    static_assert(sizeof(fixed) == sizeof(int*));
+    static_assert(sizeof(dynamic) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(dynamic.size(), 4u);
 }
 
@@ -219,6 +240,7 @@ TEST(SpanInitList, const_bool_from_braced_list) {
 TEST(SpanInitList, named_initializer_list_keeps_array_alive) {
     std::initializer_list<int> il = {10, 20, 30};
     bsp::span<const int>       s(il);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 3u);
     EXPECT_EQ(s[0], 10);
     EXPECT_EQ(s[2], 30);
@@ -229,6 +251,7 @@ TEST(SpanInitList, pointer_and_size_resolves_to_pointer_count_ctor) {
     bool*                 ptr     = data;
     std::size_t           n       = 4;
     bsp::span<const bool> s(ptr, n);
+    static_assert(sizeof(s) == sizeof(int*) + sizeof(std::size_t));
     EXPECT_EQ(s.size(), 4u);
     EXPECT_EQ(s.data(), data);
 }

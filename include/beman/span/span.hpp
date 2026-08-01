@@ -56,11 +56,34 @@ template <class Range, class ElementType>
 inline constexpr bool is_compatible_element_type_v =
     std::is_convertible_v<std::remove_reference_t<std::ranges::range_reference_t<Range>> (*)[], ElementType (*)[]>;
 
+template <std::size_t Extent>
+struct compressed_size {
+    constexpr compressed_size() = default;
+    constexpr explicit compressed_size(std::size_t) {}
+
+    constexpr std::size_t size() const { return Extent; }
+    constexpr void        remove_prefix() {}
+    constexpr void        remove_suffix() {}
+};
+
+template <>
+struct compressed_size<dynamic_extent> {
+    constexpr explicit compressed_size(std::size_t sz) : size_(sz) {}
+    constexpr std::size_t size() const { return size_; }
+    constexpr void        remove_prefix(std::size_t N) { size_ -= N; }
+    constexpr void        remove_suffix(std::size_t N) { size_ -= N; }
+
+  private:
+    std::size_t size_;
+};
+
 } // namespace detail
 
 // 26.7.3 Class template span [views.span]
 template <class ElementType, std::size_t Extent>
-class span {
+class span : public detail::compressed_size<Extent> {
+    using size_holder = detail::compressed_size<Extent>;
+
   public:
     // Member types
     using element_type           = ElementType;
@@ -83,10 +106,11 @@ class span {
 
     // Default constructor: only valid when Extent == 0 or Extent == dynamic_extent
     template <std::size_t E = Extent, std::enable_if_t<E == dynamic_extent || E == 0, int> = 0>
-    constexpr span() noexcept : data_(nullptr), size_(0) {}
+    constexpr span() noexcept : data_(nullptr), size_holder(0) {}
 
     // Pointer + count constructor.
-    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count) : data_(ptr), size_(count) {
+    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count)
+        : data_(ptr), size_holder(count) {
         if constexpr (Extent != dynamic_extent) {
             assert(count == Extent);
         }
@@ -94,7 +118,7 @@ class span {
 
     // Pointer pair constructor.
     constexpr explicit(Extent != dynamic_extent) span(pointer first, pointer last)
-        : data_(first), size_(static_cast<size_type>(last - first)) {
+        : data_(first), size_holder(static_cast<size_type>(last - first)) {
         if constexpr (Extent != dynamic_extent) {
             assert(static_cast<size_type>(last - first) == Extent);
         }
@@ -109,21 +133,21 @@ class span {
                                   ElementType (*)[]>,
             int> = 0>
     // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-    constexpr span(ElementType (&arr)[N]) noexcept : data_(arr), size_(N) {}
+    constexpr span(ElementType (&arr)[N]) noexcept : data_(arr), size_holder(N) {}
 
     // std::array constructor (fixed-size)
     template <class T,
               std::size_t N,
               std::enable_if_t<Extent == dynamic_extent || Extent == N, int>           = 0,
               std::enable_if_t<std::is_convertible_v<T (*)[], ElementType (*)[]>, int> = 0>
-    constexpr span(std::array<T, N>& arr) noexcept : data_(arr.data()), size_(N) {}
+    constexpr span(std::array<T, N>& arr) noexcept : data_(arr.data()), size_holder(N) {}
 
     // const std::array constructor
     template <class T,
               std::size_t N,
               std::enable_if_t<Extent == dynamic_extent || Extent == N, int>                 = 0,
               std::enable_if_t<std::is_convertible_v<const T (*)[], ElementType (*)[]>, int> = 0>
-    constexpr span(const std::array<T, N>& arr) noexcept : data_(arr.data()), size_(N) {}
+    constexpr span(const std::array<T, N>& arr) noexcept : data_(arr.data()), size_holder(N) {}
 
     // Range constructor (generic contiguous range)
     template <class Range,
@@ -135,7 +159,7 @@ class span {
               std::enable_if_t<std::ranges::borrowed_range<Range> || std::is_const_v<ElementType>, int> = 0,
               std::enable_if_t<detail::is_compatible_element_type_v<Range, ElementType>, int>           = 0>
     constexpr explicit(Extent != dynamic_extent) span(Range&& r)
-        : data_(std::ranges::data(r)), size_(std::ranges::size(r)) {
+        : data_(std::ranges::data(r)), size_holder(std::ranges::size(r)) {
         if constexpr (Extent != dynamic_extent) {
             if constexpr (requires { std::integral_constant<size_type, std::ranges::size(r)>{}; }) {
                 static_assert(std::ranges::size(r) == Extent,
@@ -156,7 +180,7 @@ class span {
               std::enable_if_t<std::is_const_v<T_>, int>                                     = 0,
               std::enable_if_t<std::is_same_v<InitListValueType, std::remove_cv_t<T_>>, int> = 0>
     constexpr explicit(Extent != dynamic_extent) span(std::initializer_list<InitListValueType> il)
-        : data_(il.begin()), size_(il.size()) {
+        : data_(il.begin()), size_holder(il.size()) {
         if constexpr (Extent != dynamic_extent) {
             assert(il.size() == Extent);
         }
@@ -170,7 +194,7 @@ class span {
                                int> = 0>
     constexpr explicit(Extent != dynamic_extent && OtherExtent == dynamic_extent)
         span(const span<OtherElementType, OtherExtent>& s) noexcept
-        : data_(s.data()), size_(s.size()) {
+        : data_(s.data()), size_holder(s.size()) {
         if constexpr (Extent != dynamic_extent) {
             assert(s.size() == Extent);
         }
@@ -237,19 +261,19 @@ class span {
     {
         assert(n <= size());
         data_ += n;
-        size_ -= n;
+        size_holder::remove_prefix(n);
     }
 
     constexpr void remove_suffix(size_type n) noexcept
         requires(Extent == dynamic_extent)
     {
         assert(n <= size());
-        size_ -= n;
+        size_holder::remove_suffix(n);
     }
 
     // 26.7.3.4 Observers [span.obs]
 
-    [[nodiscard]] constexpr size_type size() const noexcept { return size_; }
+    [[nodiscard]] constexpr size_type size() const noexcept { return size_holder::size(); }
 
     [[nodiscard]] constexpr size_type size_bytes() const noexcept { return size() * sizeof(element_type); }
 
@@ -288,20 +312,19 @@ class span {
     // 26.7.3.6 Iterator support [span.iterators]
 
     constexpr iterator begin() const noexcept { return data_; }
-    constexpr iterator end() const noexcept { return data_ + size_; }
+    constexpr iterator end() const noexcept { return data_ + size(); }
 
     constexpr reverse_iterator rbegin() const noexcept { return reverse_iterator(end()); }
     constexpr reverse_iterator rend() const noexcept { return reverse_iterator(begin()); }
 
     // cbegin/cend yield iterators to const elements even when ElementType is non-const
     constexpr const_iterator         cbegin() const noexcept { return data_; }
-    constexpr const_iterator         cend() const noexcept { return data_ + size_; }
+    constexpr const_iterator         cend() const noexcept { return data_ + size(); }
     constexpr const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
     constexpr const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
 
   private:
-    pointer   data_;
-    size_type size_;
+    pointer data_;
 };
 
 // Deduction guides (C++17)
