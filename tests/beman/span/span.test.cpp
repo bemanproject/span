@@ -634,7 +634,7 @@ TEST(SpanObjectRepresentation, as_bytes_fixed_extent) {
     int               arr[3] = {1, 2, 3};
     bsp::span<int, 3> s(arr);
     static_assert(sizeof(s) == sizeof(int*));
-    auto              bytes = bsp::as_bytes(s);
+    auto bytes = bsp::as_bytes(s);
     static_assert(decltype(bytes)::extent == 3 * sizeof(int));
     EXPECT_EQ(bytes.size(), 3 * sizeof(int));
 }
