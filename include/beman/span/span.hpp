@@ -62,16 +62,14 @@ struct compressed_size {
     constexpr explicit compressed_size(std::size_t) {}
 
     constexpr std::size_t size() const { return Extent; }
-    constexpr void        remove_prefix() {}
-    constexpr void        remove_suffix() {}
+    constexpr void        reduce_size() {}
 };
 
 template <>
 struct compressed_size<dynamic_extent> {
     constexpr explicit compressed_size(std::size_t sz) : size_(sz) {}
     constexpr std::size_t size() const { return size_; }
-    constexpr void        remove_prefix(std::size_t N) { size_ -= N; }
-    constexpr void        remove_suffix(std::size_t N) { size_ -= N; }
+    constexpr void        reduce_size(std::size_t N) { size_ -= N; }
 
   private:
     std::size_t size_;
@@ -109,8 +107,7 @@ class span : public detail::compressed_size<Extent> {
     constexpr span() noexcept : data_(nullptr), size_holder(0) {}
 
     // Pointer + count constructor.
-    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count)
-        : data_(ptr), size_holder(count) {
+    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count) : data_(ptr), size_holder(count) {
         if constexpr (Extent != dynamic_extent) {
             assert(count == Extent);
         }
@@ -261,14 +258,14 @@ class span : public detail::compressed_size<Extent> {
     {
         assert(n <= size());
         data_ += n;
-        size_holder::remove_prefix(n);
+        size_holder::reduce_size(n);
     }
 
     constexpr void remove_suffix(size_type n) noexcept
         requires(Extent == dynamic_extent)
     {
         assert(n <= size());
-        size_holder::remove_suffix(n);
+        size_holder::reduce_size(n);
     }
 
     // 26.7.3.4 Observers [span.obs]
