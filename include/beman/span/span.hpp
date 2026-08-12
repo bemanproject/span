@@ -24,6 +24,7 @@
 #include <limits>
 #include <ranges>
 #include <stdexcept>
+#include <tuple>
 #include <type_traits>
 
 namespace beman::span {
@@ -104,10 +105,10 @@ class span : public detail::compressed_size<Extent> {
 
     // Default constructor: only valid when Extent == 0 or Extent == dynamic_extent
     template <std::size_t E = Extent, std::enable_if_t<E == dynamic_extent || E == 0, int> = 0>
-    constexpr span() noexcept : data_(nullptr), size_holder(0) {}
+    constexpr span() noexcept : size_holder(0), data_(nullptr) {}
 
     // Pointer + count constructor.
-    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count) : data_(ptr), size_holder(count) {
+    constexpr explicit(Extent != dynamic_extent) span(pointer ptr, size_type count) : size_holder(count), data_(ptr) {
         if constexpr (Extent != dynamic_extent) {
             assert(count == Extent);
         }
@@ -115,7 +116,7 @@ class span : public detail::compressed_size<Extent> {
 
     // Pointer pair constructor.
     constexpr explicit(Extent != dynamic_extent) span(pointer first, pointer last)
-        : data_(first), size_holder(static_cast<size_type>(last - first)) {
+        : size_holder(static_cast<size_type>(last - first)), data_(first) {
         if constexpr (Extent != dynamic_extent) {
             assert(static_cast<size_type>(last - first) == Extent);
         }
@@ -130,21 +131,21 @@ class span : public detail::compressed_size<Extent> {
                                   ElementType (*)[]>,
             int> = 0>
     // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-    constexpr span(ElementType (&arr)[N]) noexcept : data_(arr), size_holder(N) {}
+    constexpr span(ElementType (&arr)[N]) noexcept : size_holder(N), data_(arr) {}
 
     // std::array constructor (fixed-size)
     template <class T,
               std::size_t N,
               std::enable_if_t<Extent == dynamic_extent || Extent == N, int>           = 0,
               std::enable_if_t<std::is_convertible_v<T (*)[], ElementType (*)[]>, int> = 0>
-    constexpr span(std::array<T, N>& arr) noexcept : data_(arr.data()), size_holder(N) {}
+    constexpr span(std::array<T, N>& arr) noexcept : size_holder(N), data_(arr.data()) {}
 
     // const std::array constructor
     template <class T,
               std::size_t N,
               std::enable_if_t<Extent == dynamic_extent || Extent == N, int>                 = 0,
               std::enable_if_t<std::is_convertible_v<const T (*)[], ElementType (*)[]>, int> = 0>
-    constexpr span(const std::array<T, N>& arr) noexcept : data_(arr.data()), size_holder(N) {}
+    constexpr span(const std::array<T, N>& arr) noexcept : size_holder(N), data_(arr.data()) {}
 
     // Range constructor (generic contiguous range)
     template <class Range,
@@ -156,7 +157,7 @@ class span : public detail::compressed_size<Extent> {
               std::enable_if_t<std::ranges::borrowed_range<Range> || std::is_const_v<ElementType>, int> = 0,
               std::enable_if_t<detail::is_compatible_element_type_v<Range, ElementType>, int>           = 0>
     constexpr explicit(Extent != dynamic_extent) span(Range&& r)
-        : data_(std::ranges::data(r)), size_holder(std::ranges::size(r)) {
+        : size_holder(std::ranges::size(r)), data_(std::ranges::data(r)) {
         if constexpr (Extent != dynamic_extent) {
             if constexpr (requires { std::integral_constant<size_type, std::ranges::size(r)>{}; }) {
                 static_assert(std::ranges::size(r) == Extent,
@@ -177,7 +178,7 @@ class span : public detail::compressed_size<Extent> {
               std::enable_if_t<std::is_const_v<T_>, int>                                     = 0,
               std::enable_if_t<std::is_same_v<InitListValueType, std::remove_cv_t<T_>>, int> = 0>
     constexpr explicit(Extent != dynamic_extent) span(std::initializer_list<InitListValueType> il)
-        : data_(il.begin()), size_holder(il.size()) {
+        : size_holder(il.size()), data_(il.begin()) {
         if constexpr (Extent != dynamic_extent) {
             assert(il.size() == Extent);
         }
@@ -191,7 +192,7 @@ class span : public detail::compressed_size<Extent> {
                                int> = 0>
     constexpr explicit(Extent != dynamic_extent && OtherExtent == dynamic_extent)
         span(const span<OtherElementType, OtherExtent>& s) noexcept
-        : data_(s.data()), size_holder(s.size()) {
+        : size_holder(s.size()), data_(s.data()) {
         if constexpr (Extent != dynamic_extent) {
             assert(s.size() == Extent);
         }
@@ -357,6 +358,33 @@ auto as_writable_bytes(span<ElementType, Extent> s) noexcept
     return return_type{reinterpret_cast<std::byte*>(s.data()), s.size_bytes()};
 }
 
+// [span.tuple] Tuple interface for fixed-size span (P3786R2).
+// Lives in beman::span so ADL picks it up for structured bindings on span<T, N>.
+template <std::size_t I, class ElementType, std::size_t Extent>
+constexpr ElementType& get(span<ElementType, Extent> s) noexcept {
+    static_assert(Extent != dynamic_extent, "beman::span::get<I> requires a fixed-extent span");
+    static_assert(I < Extent, "beman::span::get<I>: index out of range");
+    return s[I];
+}
+
 } // namespace beman::span
+
+// std::tuple_size / std::tuple_element specializations for fixed-size span (P3786R2).
+// dynamic_extent is excluded via constrained partial specialization, so
+// std::tuple_size<span<T>> falls back to the (undefined) primary template -
+// SFINAE-friendly for the tuple-like concept.
+namespace std {
+
+template <class ElementType, std::size_t Extent>
+    requires(Extent != ::beman::span::dynamic_extent)
+struct tuple_size<::beman::span::span<ElementType, Extent>> : integral_constant<std::size_t, Extent> {};
+
+template <std::size_t I, class ElementType, std::size_t Extent>
+    requires(Extent != ::beman::span::dynamic_extent && I < Extent)
+struct tuple_element<I, ::beman::span::span<ElementType, Extent>> {
+    using type = ElementType&;
+};
+
+} // namespace std
 
 #endif // BEMAN_SPAN_SPAN_HPP
